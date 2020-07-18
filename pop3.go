@@ -60,7 +60,7 @@ func NewClient(conn net.Conn) (*Client, error) {
 //
 // Output sent after the first line must be retrieved via readLines.
 func (c *Client) Cmd(format string, args ...interface{}) (string, error) {
-	fmt.Fprintf(c.conn, format, args...)
+	_, _ = fmt.Fprintf(c.conn, format, args...)
 	line, _, err := c.bin.ReadLine()
 	if err != nil { return "", err }
 	l := string(line)
@@ -193,6 +193,16 @@ func (c *Client) Retr(msg int) (text string, err error) {
 	return
 }
 
+// Retr downloads and returns the given message. The lines are separated by LF,
+// whatever the server sent.
+func (c *Client) GetRetrReader(msg int) (reader *bufio.Reader, err error) {
+	_, err = c.Cmd("RETR %d\r\n", msg)
+	if err != nil {
+		return nil, err
+	}
+	return c.bin, nil
+}
+
 // Dele marks the given message as deleted.
 func (c *Client) Dele(msg int) (err error) {
 	_, err = c.Cmd("DELE %d\r\n", msg)
@@ -218,6 +228,6 @@ func (c *Client) Quit() error {
 	if err != nil {
 		return err
 	}
-	c.conn.Close()
+	_ = c.conn.Close()
 	return nil
 }
